@@ -45,8 +45,8 @@ download_if_not_exist <- function(url, refetch=FALSE, path="."){
 ## Second order functions  ######
 ################################
 
-miso_download_historical_real_time_lmp <- function(start_date = "2019-12-01",
-                                                   end_date = "2019-12-12",
+miso_download_historical_real_time <- function(start_date = "2019-01-01",
+                                                   end_date = "2019-01-01",
                                                    path = "data/rt_lmp",
                                                    file_suffix = "_rt_lmp_final.csv",
                                                    url_prefix = miso_historical_url_directory) {
@@ -58,20 +58,19 @@ miso_download_historical_real_time_lmp <- function(start_date = "2019-12-01",
 }
 
 
-miso_download_historical_real_time_lmp()
+miso_download_historical_real_time()
 
 
 
 
 #######
-# Read and transform data
-files <- list.files(path = "test_data/rt_lmp")
-files
+# Read and transform data "real time market" data, as opposed to day ahead market
 
-miso_transform_rt_lmp <- function(filename,
-                                  directory = "test_data/rt_lmp/"){
-  # tidy up the data frame
-  file <- read_csv(paste0(directory, filename),
+miso_transform_rt <- function(filename,
+                                  directory = "/data/rt_lmp/"){
+  
+  # tidy up the data frame, miso saves historical in wide format with an annoying header.... *sigh*
+  file <- read_csv(paste0(getwd(), directory, filename),
                    skip = 8,
                   col_names = TRUE,
                   cols(
@@ -104,7 +103,7 @@ miso_transform_rt_lmp <- function(filename,
                     `HE 24` = col_double())
   ) %>%
     mutate(date = "20191102",
-           transform_date = Sys.Date()
+           data_transform_date = Sys.Date()
            ) %>%
     gather(key = hour_text, value = price, `HE 1`:`HE 24`) %>%
     separate(hour_text, into = c("test", "hour_numeric"), sep = " ", remove = FALSE) %>%
@@ -113,60 +112,15 @@ miso_transform_rt_lmp <- function(filename,
     mutate(datetime = ymd_hm(paste0(date, " ", hour_numeric, ":00"))) %>%
     arrange(Node, date, hour_numeric) %>%
     mutate(rt_source = "rt_lmp_final") %>%
-    select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, transform_date)
+    select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
   return(file)
 
 }
 
-miso_transform_rt_lmp(files)
+miso_transform_rt(files) 
 
 
- 
-test_dl <- read_csv("https://docs.misoenergy.org/marketreports/20191102_rt_lmp_final.csv",
-                    skip = 4,
-                    col_names = TRUE,
-                    cols(
-                      Node = col_character(),
-                      Type = col_character(),
-                      Value = col_character(),
-                      `HE 1` = col_double(),
-                      `HE 2` = col_double(),
-                      `HE 3` = col_double(),
-                      `HE 4` = col_double(),
-                      `HE 5` = col_double(),
-                      `HE 6` = col_double(),
-                      `HE 7` = col_double(),
-                      `HE 8` = col_double(),
-                      `HE 9` = col_double(),
-                      `HE 10` = col_double(),
-                      `HE 11` = col_double(),
-                      `HE 12` = col_double(),
-                      `HE 13` = col_double(),
-                      `HE 14` = col_double(),
-                      `HE 15` = col_double(),
-                      `HE 16` = col_double(),
-                      `HE 17` = col_double(),
-                      `HE 18` = col_double(),
-                      `HE 19` = col_double(),
-                      `HE 20` = col_double(),
-                      `HE 21` = col_double(),
-                      `HE 22` = col_double(),
-                      `HE 23` = col_double(),
-                      `HE 24` = col_double())
-                    ) %>%
-        mutate(date = "20191102",
-        download_date = Sys.Date())
-# test_dl
 
-test_dl %>%
-  gather(key = hour_text, value = price, `HE 1`:`HE 24`) %>%
-  arrange(date, Node, hour_text) %>%
-  separate(hour_text, into = c("test", "hour_numeric"), sep = " ", remove = FALSE) %>%
-  mutate(temp = mapply(function(x, y) paste0(rep(x, y), collapse = ""), 0, 2 - nchar(hour_numeric))) %>%
-  mutate(hour_numeric = as.numeric(paste0(temp, hour_numeric))) %>%
-  mutate(datetime = ymd_hm(paste0(date, " ", hour_numeric, ":00"))) %>%
-  mutate(rt_source = "rt_lmp_final") %>%
-  select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, download_date)
 
 
 ##
