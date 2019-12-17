@@ -8,15 +8,16 @@ library(RCurl)
 # then load and transform?
 
 # Variables
-historical_url_directory <-  "https://docs.misoenergy.org/marketreports/"
+miso_historical_url_directory <-  "https://docs.misoenergy.org/marketreports/"
 
 
+
+##################################
+### Base Level Functions  #######
 ################################
-### Base Level Functions
-### 
 
 miso_file_date_format_func <- function(start_date = "2019-01-01", 
-                                        end_date = "2019-02-01") {
+                                        end_date = "2019-01-02") {
   timeframe_dates <- seq.Date(from = ymd(start_date), to = ymd(end_date), by = "days")
   timeframe <- as.data.frame(timeframe_dates)
   timeframe$date <- as.numeric(format(as.Date(timeframe$timeframe), '%Y%m%d'))
@@ -36,18 +37,20 @@ download_if_not_exist <- function(url, refetch=FALSE, path="."){
   else
     print(paste0(url, " ====  Already Downloaded ===="))
   dest
-}
+} #download file if it does not exist
 
 
-#############################
-## Second order functions
+
+##################################
+## Second order functions  ######
+################################
 
 miso_download_historical_real_time_lmp <- function(start_date = "2019-12-01",
                                                    end_date = "2019-12-12",
-                                                   path = "test_data/rt_lmp",
+                                                   path = "data/rt_lmp",
                                                    file_suffix = "_rt_lmp_final.csv",
-                                                   url_prefix = historical_url_directory) {
-  dir.create(path, showWarnings = FALSE) # create directory if does not exist, else nothing
+                                                   url_prefix = miso_historical_url_directory) {
+  dir.create(path, showWarnings = FALSE, recursive = TRUE) # create directory if does not exist, else nothing
 
   df <- miso_file_date_format_func(start_date = start_date, end_date = end_date) # list of dates
   df$rt_lmp_final <- paste0(url_prefix, df$date, file_suffix) # build urls
