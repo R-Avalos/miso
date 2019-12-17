@@ -67,10 +67,13 @@ miso_download_historical_real_time()
 # Read and transform data "real time market" data, as opposed to day ahead market
 
 miso_transform_rt <- function(filename,
-                                  directory = "/data/rt_lmp/"){
+                              read_directory = "/data/rt_lmp/",
+                              write_directory = "data/rt_lmp/transformed/"){
+  
+  dir.create(write_directory, showWarnings = FALSE, recursive = TRUE) # create directory if does not exist
   
   # tidy up the data frame, miso saves historical in wide format with an annoying header.... *sigh*
-  file <- read_csv(paste0(getwd(), directory, filename),
+  file <- read_csv(paste0(getwd(), read_directory, filename),
                    skip = 8,
                   col_names = TRUE,
                   cols(
@@ -113,42 +116,13 @@ miso_transform_rt <- function(filename,
     arrange(Node, date, hour_numeric) %>%
     mutate(rt_source = "rt_lmp_final") %>%
     select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
-  return(file)
+  
+  write_csv(file, path=paste0(write_directory, filename), Encoding('UTF-8')) # write transformed file
 
 }
 
 miso_transform_rt(files) 
 
-
-
-
-
-##
-historical_realtime_final_download <- function(file_suffix = "_rt_lmp_final.csv",
-                                               url_prefix = historical_url_directory,
-                                               begin_ymd = "2019-01-01",
-                                               end_ymd = "2019-01-10"){
-  
-  # Setup range of dates converted to date format used
-  df <- historical_date_format_func(start_date = begin_ymd,
-                                    end_date = end_ymd)
-  
-  # Create file names to be used with csv download calls
-  df$rt_lmp_final <- paste0(url_prefix, df$date, file_suffix)
-  
-  # download files
-  for(i in 1:length(df$rt_lmp_final)) {
-    
-    downloaded_file <- read_csv(df$rt_lmp_final[i], skip = 4) %>%
-      mutate(date = df$timeframe_dates[i],
-             cr_dt = Sys.Date()) 
-    
-    write_csv(downloaded_file, unlist(strsplit(df$rt_lmp_final[i], split = "/"))[5])
-  } 
-  
-  # conclude with print
-  print(paste0(length(df$rt_lmp_final), " files downloaded covering dates between ",
-               min(df$timeframe_dates), " and ", max(df$timeframe_dates)))
-  
-} # Function to download real time final between dates 
-# should probably update read_csv to be explicit about column types
+write_csv(test, path = paste0("/data/rt_lmp/transformed/", filename))
+getwd()
+## save to new working directory
