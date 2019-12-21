@@ -66,14 +66,97 @@ miso_download_historical_real_time()
 #######
 # Read and transform data "real time market" data, as opposed to day ahead market
 
-miso_transform_rt <- function(filename,
-                              read_directory = "/data/rt_lmp/",
-                              write_directory = "data/rt_lmp/transformed/"){
+
+miso_download_historical_real_time(start_date = "2019-01-01",
+                                   end_date = "2019-01-02")
+
+test <- as.data.frame(list.files(path = "./data/rt_lmp/", pattern = ".csv"))
+colnames(test) <-  c("filename")
+test <- test %>%
+  separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE)
+
+test
+
+read_csv(paste0("./data/rt_lmp/", test$filename[1]),
+                 skip = 8,
+                 col_names = TRUE,
+                 cols(
+                   Node = col_character(),
+                   Type = col_character(),
+                   Value = col_character(),
+                   `HE 1` = col_double(),
+                   `HE 2` = col_double(),
+                   `HE 3` = col_double(),
+                   `HE 4` = col_double(),
+                   `HE 5` = col_double(),
+                   `HE 6` = col_double(),
+                   `HE 7` = col_double(),
+                   `HE 8` = col_double(),
+                   `HE 9` = col_double(),
+                   `HE 10` = col_double(),
+                   `HE 11` = col_double(),
+                   `HE 12` = col_double(),
+                   `HE 13` = col_double(),
+                   `HE 14` = col_double(),
+                   `HE 15` = col_double(),
+                   `HE 16` = col_double(),
+                   `HE 17` = col_double(),
+                   `HE 18` = col_double(),
+                   `HE 19` = col_double(),
+                   `HE 20` = col_double(),
+                   `HE 21` = col_double(),
+                   `HE 22` = col_double(),
+                   `HE 23` = col_double(),
+                   `HE 24` = col_double())
+) %>%
+  mutate(date = test$date[1],
+         data_transform_date = Sys.Date()
+  ) %>%
+  gather(key = hour_text, value = price, `HE 1`:`HE 24`) %>%
+  separate(hour_text, into = c("test", "hour_numeric"), sep = " ", remove = FALSE) %>%
+  mutate(temp = mapply(function(x, y) paste0(rep(x, y), collapse = ""), 0, 2 - nchar(hour_numeric))) %>%
+  mutate(hour_numeric = as.numeric(paste0(temp, hour_numeric))) %>%
+  mutate(datetime = ymd_hm(paste0(date, " ", hour_numeric, ":00"))) %>%
+  arrange(Node, date, hour_numeric) %>%
+  mutate(rt_source = "rt_lmp_final") %>%
+  mutate(date = ymd(date)) %>%
+  select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
+
+
+###
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+rt_base_files <- list.files(path = "./data/rt_lmp/", pattern = ".csv")
+rt_base_files
+filename <- list.files(path = "./data/rt_lmp/", pattern = ".csv")
+remove(filename)
+
+
+
+miso_transform_rt <- function(read_directory = "data/rt_lmp/",
+                              write_directory = "data/rt_lmp/transformed/",
+                              filename){
+  
   
   dir.create(write_directory, showWarnings = FALSE, recursive = TRUE) # create directory if does not exist
   
   # tidy up the data frame, miso saves historical in wide format with an annoying header.... *sigh*
-  file <- read_csv(paste0(getwd(), read_directory, filename),
+  file <- read_csv(paste0(read_directory, filename),
                    skip = 8,
                   col_names = TRUE,
                   cols(
@@ -118,11 +201,14 @@ miso_transform_rt <- function(filename,
     select(Node, Type, Value, date, datetime, rt_lmp_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
   
   write_csv(file, path=paste0(write_directory, filename), Encoding('UTF-8')) # write transformed file
+  print(paste0(file, " transformed and saved to ", write_directory))
 
 }
 
-miso_transform_rt(files) 
+test$filename
+sapply(test$filename, miso_transform_rt())
 
-write_csv(test, path = paste0("/data/rt_lmp/transformed/", filename))
-getwd()
-## save to new working directory
+
+miso_transform_rt(filename = test$filename[1])
+
+#### Need to add checks if file exists in write directory, than skip.... 
