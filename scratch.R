@@ -5,7 +5,7 @@ library(lubridate)
 library(RCurl)
 # Using R for ETL, because why not?
 # download files to directory
-# then load and transform?
+# then load, transform, and push to a local database
 
 # Variables
 miso_historical_url_directory <-  "https://docs.misoenergy.org/marketreports/"
@@ -77,7 +77,7 @@ test <- test %>%
 
 test
 
-read_csv(paste0("./data/rt_lmp/", test$filename[1]),
+transformed_test <- read_csv(paste0("./data/rt_lmp/", test$filename[1]),
                  skip = 8,
                  col_names = TRUE,
                  cols(
@@ -122,6 +122,14 @@ read_csv(paste0("./data/rt_lmp/", test$filename[1]),
   mutate(date = ymd(date)) %>%
   select(Node, Type, Value, date, datetime, rt_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
 
+transformed_test
+
+#dir.create("./data/rt_lmp/transformed/", showWarnings = FALSE, recursive = TRUE)## write to sub directory
+transformed_test %>%
+  select(date) %>%
+  distinct()
+paste0(transformed_test$date[1],
+       "_rt_lmp_final_transformed.csv")
 
 ###
 
