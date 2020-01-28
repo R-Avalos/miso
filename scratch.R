@@ -70,7 +70,31 @@ miso_download_historical_real_time()
 miso_download_historical_real_time(start_date = "2019-01-01",
                                    end_date = "2019-01-02")
 
+
+
+
+transform_real_time <- function(read_path = "./data/rt_lmp/", 
+                                write_path = "./data/rt_lmp/transformed/") {
+  
+  # List files in directory
+  list_files_into_df <- as.data.frame(list.files(path = read_path, pattern = ".csv"))
+  colnames(list_files_into_df) <- c("filename")
+  list_files_into_df <- list_files_into_df %>%
+    separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE) # this separate at 8.... seems fragile, no?
+  
+  return(list_files_into_df)
+  
+  
+  
+}
+
+transform_real_time()
+
+
+
 test <- as.data.frame(list.files(path = "./data/rt_lmp/", pattern = ".csv"))
+test
+
 colnames(test) <-  c("filename")
 test <- test %>%
   separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE)
