@@ -58,7 +58,7 @@ miso_download_historical_real_time <- function(start_date = "2019-01-01",
 }
 
 
-miso_download_historical_real_time()
+# miso_download_historical_real_time()
 
 
 
@@ -68,12 +68,12 @@ miso_download_historical_real_time()
 
 
 miso_download_historical_real_time(start_date = "2019-01-01",
-                                   end_date = "2019-01-02")
+                                   end_date = "2019-01-03")
 
 
 
 
-transform_real_time <- function(read_path = "./data/rt_lmp/", 
+transform_real_time_within_directory <- function(read_path = "./data/rt_lmp/", 
                                 write_path = "./data/rt_lmp/transformed/") {
   
   # List files in directory
@@ -82,14 +82,14 @@ transform_real_time <- function(read_path = "./data/rt_lmp/",
   list_files_into_df <- list_files_into_df %>%
     separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE) # this separate at 8.... seems fragile, no?
   
-  return(list_files_into_df)
+  dir.create(write_path, showWarnings = FALSE, recursive = TRUE) # create sub directory to write transformed csv files
   
-  
+  lapply(list_files_into_df$filename, extract_transform_load_rt, write_directory =  write_path) # extract, transform, load to directory
   
 }
 
-test <- transform_real_time()
-test
+transform_real_time_within_directory()
+
 
 
 # test <- as.data.frame(list.files(path = "./data/rt_lmp/", pattern = ".csv"))
@@ -103,7 +103,7 @@ test
 test$filename
 lapply(test$filename, transform_real_time_load_transform, write_directory =  "data/rt_lmp/transformed/")
 
-transform_real_time_load_transform <- function(filename,
+extract_transform_load_rt <- function(filename,
                                                write_directory){
   transformed_df <- read_csv(paste0("./data/rt_lmp/", filename),
                                skip = 8,
@@ -150,8 +150,8 @@ transform_real_time_load_transform <- function(filename,
     mutate(date = ymd(date)) %>%
     select(Node, Type, Value, date, datetime, rt_price = price, hour_text, hour_numeric, rt_source, data_transform_date)
   
+  print(paste0(filename, " transformed and saving to ", write_directory))
   write_csv(transformed_df, path=paste0(write_directory, filename), Encoding('UTF-8')) # write transformed file
-  #print(paste0(filename, " transformed and saved to ", write_directory))
   
 }
 
