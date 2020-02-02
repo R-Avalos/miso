@@ -116,20 +116,31 @@ miso_download_historical_real_time <- function(start_date = "2019-01-01",
 
 # Transform and save to sub directory
 miso_transform_real_time_within_directory <- function(read_path = "./data/rt_lmp/", 
-                                write_path = "./data/rt_lmp/transformed/") {
+                                                      write_path = "./data/rt_lmp/transformed/",
+                                                      min_date = "2019-01-01",
+                                                      max_date = "2019-12-31") {
+  # create sub directory to write transformed csv files
+  dir.create(write_path, showWarnings = FALSE, recursive = TRUE)
   
-  # List files in directory
-  list_files_into_df <- as.data.frame(list.files(path = read_path, pattern = ".csv"))
-  colnames(list_files_into_df) <- c("filename")
-  list_files_into_df <- list_files_into_df %>%
-    mutate(filename = as.character(filename))
+  # List files in read directory
+  list_files_into_df <- list.files(path = read_path, pattern = ".csv") %>%
+    as.data.frame() %>%
+    select(filename = 1) %>%
+    mutate(filename = as.character(filename)) %>%
+    separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE) %>%
+    mutate(date = ymd(date)) %>%
+    subset(date >= min_date & date <= max_date)
   
-  # List already transformed
-  already_transformed_files <- as.data.frame(list.files(path = write_path, pattern = ".csv"))
-  colnames(already_transformed_files) <-c("filename")
-  already_transformed_files <- already_transformed_files %>%
-    mutate(filename = as.character(filename))
-  print(paste0("Of the ", length(list_files_into_df$filename), " non-transformed files selected, ", length(already_transformed_files$filename), " have already been transformed"))
+  # List already transformed files in write directory
+  already_transformed_files <- list.files(path = write_path, pattern = ".csv") %>%
+    as.data.frame() %>%
+    select(filename = 1) %>%
+    mutate(filename = as.character(filename)) %>%
+    separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE) %>%
+    mutate(date = ymd(date)) %>%
+    subset(date >= min_date & date <= max_date)
+
+    print(paste0("Of the ", length(list_files_into_df$filename), " non-transformed files selected, ", length(already_transformed_files$filename), " have already been transformed"))
   
   # remove any files already transformed from list of files to transform
   list_files_into_df <- list_files_into_df %>%
@@ -139,11 +150,12 @@ miso_transform_real_time_within_directory <- function(read_path = "./data/rt_lmp
   list_files_into_df <- list_files_into_df %>%
     separate(filename, into = c("date", "file_type"), sep = 8, remove = FALSE) # this separate at 8.... seems fragile, no?
   print(paste0("Converting ", length(list_files_into_df$filename), " files from wide to long format"))
-  dir.create(write_path, showWarnings = FALSE, recursive = TRUE) # create sub directory to write transformed csv files
   
   lapply(list_files_into_df$filename, extract_transform_load_rt, write_directory =  write_path) # extract, transform, load to directory
   
 }
+
+
 
 
 
